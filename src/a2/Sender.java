@@ -12,7 +12,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.TimerTask;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -35,15 +34,6 @@ public class Sender {
 	static DatagramPacket receive;
 	static String str = "That'll do donkey, that'll do";
 	static byte[] handShake = str.getBytes();
-
-	class Helper extends TimerTask {
-		public static int i = 0;
-
-		@Override
-		public void run() {
-			System.out.println("Timer ran " + ++i);
-		}
-	}
 
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Sender");
