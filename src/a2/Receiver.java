@@ -3,6 +3,14 @@ package a2;
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -10,6 +18,14 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
 public class Receiver {
+	static boolean connected = false;
+	static InetAddress ipAddress;
+	static int portA;
+	static int portD;
+	static String fName;
+	static DatagramSocket socket;
+	static DatagramPacket r;
+	static DatagramPacket ack;
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Erman how do you spell reciveeer");
 		f.setSize(700, 400);
@@ -41,9 +57,9 @@ public class Receiver {
 		
 		final JButton modeButton = new JButton("Reliable/Unreliable");
 		modeButton.setBackground(Color.GREEN);
-		final JButton connect = new JButton("Connect/Disconnect");
-		connect.setHorizontalAlignment(SwingConstants.CENTER);
-		connect.setBackground(Color.YELLOW);
+		final JButton connectButton = new JButton("Connect/Disconnect");
+		connectButton.setHorizontalAlignment(SwingConstants.CENTER);
+		connectButton.setBackground(Color.YELLOW);
 		
 		final TextField ipField = new TextField();
 		final TextField portACKField = new TextField();
@@ -64,9 +80,51 @@ public class Receiver {
 		f.add(mode);
 		f.add(modeButton);
 		f.add(conn);
-		f.add(connect);
+		f.add(connectButton);
 		
 		f.setVisible(true);
+		
+		
+		connectButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(connected == false) {
+					if(ipField.getText() != "") {
+						try {
+							ipAddress = InetAddress.getByName(ipField.getText());
+						} catch (UnknownHostException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+					}
+					if(portACKField.getText() != "") {
+						portA = Integer.parseInt(portACKField.getText());
+					}
+					if(portDATAField.getText() != "") {
+						portD = Integer.parseInt(portDATAField.getText());
+					}
+					if(fileField.getText() != "") {
+						fName = fileField.getText();
+					}
+					
+					try {
+						socket = new DatagramSocket(portA,ipAddress);
+						r.setPort(portD);
+						r.setAddress(ipAddress);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				}
+			}
+		});
+		socket.receive(r);
+		String str = Arrays.toString(r.getData());
+		System.out.println(str);
+		
+		String recieved = "Ack of segement number 0";
+		byte[] bytes = recieved.getBytes();
+		ack.setData(bytes);
+		socket.send(ack);
 	}
 	
 }
