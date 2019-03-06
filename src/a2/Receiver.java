@@ -6,9 +6,11 @@ import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -22,6 +24,8 @@ public class Receiver {
 	static int portD;
 	static String fName;
 	static DatagramSocket socket;
+	static DatagramPacket r;
+	static DatagramPacket ack;
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Erman how do you spell reciveeer");
 		f.setSize(700, 400);
@@ -105,12 +109,22 @@ public class Receiver {
 					
 					try {
 						socket = new DatagramSocket(portA,ipAddress);
+						r.setPort(portD);
+						r.setAddress(ipAddress);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
 				}
 			}
 		});
+		socket.receive(r);
+		String str = Arrays.toString(r.getData());
+		System.out.println(str);
+		
+		String recieved = "Ack of segement number 0";
+		byte[] bytes = recieved.getBytes();
+		ack.setData(bytes);
+		socket.send(ack);
 	}
 	
 }
