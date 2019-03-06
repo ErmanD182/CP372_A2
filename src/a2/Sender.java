@@ -79,7 +79,14 @@ public class Sender {
 		connectButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
+				if (connected == false) {
+					if (ipField.getText() != "") {
+						ipAddress = ipField.getText();
+					}
+					if (portField.getText() != "") {
+						portNum = Integer.parseInt(portField.getText());
+					}
+				}
 			}
 		});
 
