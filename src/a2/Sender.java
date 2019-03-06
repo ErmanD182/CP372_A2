@@ -12,6 +12,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.TimerTask;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -34,6 +35,15 @@ public class Sender {
 	static DatagramPacket receive;
 	static String str = "That'll do donkey, that'll do";
 	static byte[] handShake = str.getBytes();
+
+	class Helper extends TimerTask {
+		public static int i = 0;
+
+		@Override
+		public void run() {
+			System.out.println("Timer ran " + ++i);
+		}
+	}
 
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Sender");
@@ -95,6 +105,7 @@ public class Sender {
 		f.setVisible(true);
 
 		connectButton.addActionListener(new ActionListener() {
+			@SuppressWarnings("unused")
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (connected == false) {
@@ -132,11 +143,23 @@ public class Sender {
 						send.setAddress(ipAddress);
 						send.setData(handShake);
 						socket.send(send);
-
+						boolean receivedACK = false;
+						int time = 0;
+						while (receivedACK = false && time < timeoutNumber) {
+							socket.receive(receive);
+							if (receive.getData().toString().isEmpty() == true) {
+								Thread.sleep(timeoutNumber / 10);
+								time = time + timeoutNumber / 10;
+							} else {
+								receivedACK = true;
+							}
+						}
 						connectionStatus.setText("Connection status: successfully connected");
 						connected = true;
 
 					} catch (IOException e1) {
+						e1.printStackTrace();
+					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
 
