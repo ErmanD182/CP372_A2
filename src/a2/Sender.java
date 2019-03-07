@@ -5,12 +5,11 @@ import java.awt.GridLayout;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 import javax.swing.JButton;
@@ -28,12 +27,10 @@ public class Sender {
 	static String fileName = "";
 	static boolean connected = false;
 	static DatagramSocket socket;
-	static BufferedReader in;
-	static PrintWriter out;
-	static DatagramPacket send;
-	static DatagramPacket receive;
 	static String str = "That'll do donkey, that'll do";
 	static byte[] handShake = str.getBytes();
+	static byte[] handShake2 = new byte[1024];
+	static DatagramPacket send = new DatagramPacket(handShake, UDPsize);
 
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Sender");
@@ -55,7 +52,7 @@ public class Sender {
 		UDPdatagram.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel transmission = new JLabel("Total transmission time: ");
 		transmission.setHorizontalAlignment(SwingConstants.LEFT);
-		final JLabel timeout = new JLabel("Timeout: ");
+		final JLabel timeout = new JLabel("Timeout (milliseconds): ");
 		timeout.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel connectionStatus = new JLabel("Connection status: not connected ");
 		connectionStatus.setHorizontalAlignment(SwingConstants.LEFT);
@@ -95,16 +92,14 @@ public class Sender {
 		f.setVisible(true);
 
 		connectButton.addActionListener(new ActionListener() {
-			@SuppressWarnings("unused")
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (connected == false) {
 					connectButton.setBackground(Color.RED);
-					if (ipField.getText() != "") {
+					if (ipField.getText().isEmpty() == false) {
 						try {
 							ipAddress = InetAddress.getByName(ipField.getText());
 						} catch (UnknownHostException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
 					}
@@ -128,28 +123,33 @@ public class Sender {
 					}
 
 					try {
+						// HANDSHAKING
+						connectionStatus.setText("Connection status: connecting...");
 						socket = new DatagramSocket(portNum2, ipAddress);
 						send.setPort(portNum);
 						send.setAddress(ipAddress);
+						send.setLength(UDPsize);
 						send.setData(handShake);
 						socket.send(send);
-						boolean receivedACK = false;
-						int time = 0;
-						while (receivedACK = false && time < timeoutNumber) {
-							socket.receive(receive);
-							if (receive.getData().toString().isEmpty() == true) {
-								Thread.sleep(timeoutNumber / 10);
-								time = time + timeoutNumber / 10;
-							} else {
-								receivedACK = true;
-							}
-						}
-						connectionStatus.setText("Connection status: successfully connected");
-						connected = true;
+						DatagramPacket receive = new DatagramPacket(handShake2, handShake2.length, ipAddress, portNum);
+						socket.setSoTimeout(timeoutNumber);
 
+						while (true) {
+							try {
+								socket.receive(receive);
+								String rcvd = "rcvd from " + receive.getAddress() + ", " + receive.getPort() + ": "
+										+ new String(receive.getData(), 0, receive.getLength());
+								System.out.println(rcvd);
+								connectionStatus.setText("Connection status: successfully connected");
+								connected = true;
+								break;
+							} catch (SocketTimeoutException e1) {
+								System.out.println("Timeout reached! Resending packet...");
+								socket.send(send);
+							}
+
+						}
 					} catch (IOException e1) {
-						e1.printStackTrace();
-					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
 
