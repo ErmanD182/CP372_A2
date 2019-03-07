@@ -110,7 +110,7 @@ public class Receiver {
 					}
 					
 					try {
-						socket = new DatagramSocket(portD,ipAddress);
+						socket = new DatagramSocket(portA,InetAddress.getByName("10.84.92.88"));
 						r.setPort(portD);
 						r.setAddress(ipAddress);
 						connected = true;
