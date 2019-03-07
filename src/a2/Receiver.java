@@ -23,11 +23,13 @@ public class Receiver {
 	static int portA;
 	static int portD;
 	static String fName;
+	static String recieved = "Ack of segement number 0";
+	static byte[] bytes  = recieved.getBytes();
 	static DatagramSocket socket;
-	static DatagramPacket r;
+	static DatagramPacket r = new DatagramPacket(bytes,bytes.length);
 	static DatagramPacket ack;
 	public static void main(String[] args) throws Exception {
-		JFrame f = new JFrame("Erman how do you spell reciveeer");
+		JFrame f = new JFrame("Receiver");
 		f.setSize(700, 400);
 		f.setLocation(500, 10);
 		f.setLocation(100, 10);
@@ -89,7 +91,7 @@ public class Receiver {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(connected == false) {
-					if(ipField.getText() != "") {
+					if(ipField.getText().isEmpty() == false) {
 						try {
 							ipAddress = InetAddress.getByName(ipField.getText());
 						} catch (UnknownHostException e1) {
@@ -97,34 +99,39 @@ public class Receiver {
 							e1.printStackTrace();
 						}
 					}
-					if(portACKField.getText() != "") {
+					if(portACKField.getText().isEmpty() == false) {
 						portA = Integer.parseInt(portACKField.getText());
 					}
-					if(portDATAField.getText() != "") {
+					if(portDATAField.getText().isEmpty() == false) {
 						portD = Integer.parseInt(portDATAField.getText());
 					}
-					if(fileField.getText() != "") {
+					if(fileField.getText().isEmpty() == false) {
 						fName = fileField.getText();
 					}
 					
 					try {
-						socket = new DatagramSocket(portA,ipAddress);
+						socket = new DatagramSocket(portD,ipAddress);
 						r.setPort(portD);
 						r.setAddress(ipAddress);
+						connected = true;
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
 				}
 			}
 		});
-		socket.receive(r);
-		String str = Arrays.toString(r.getData());
-		System.out.println(str);
-		
-		String recieved = "Ack of segement number 0";
-		byte[] bytes = recieved.getBytes();
-		ack.setData(bytes);
-		socket.send(ack);
+		while(connected == true) {
+			
+			socket.receive(r);
+			String str = Arrays.toString(r.getData());
+			System.out.println(str);
+			
+			
+			
+			ack.setData(bytes);
+			socket.send(ack);
+			
+		}
 	}
 	
 }
