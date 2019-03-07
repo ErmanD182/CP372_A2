@@ -10,7 +10,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -23,23 +22,22 @@ public class Receiver {
 	static int portA;
 	static int portD;
 	static String fName;
-	static String recieved = "Ack of segement number 0";
-	static byte[] bytes  = recieved.getBytes();
+	static String ack = "Ack of segement number 0";
+	static byte[] bytes = ack.getBytes();
+	static byte[] bytes2 = new byte[1024];
 	static DatagramSocket socket;
-	static DatagramPacket r = new DatagramPacket(bytes,bytes.length);
-	static DatagramPacket ack;
+	static DatagramPacket r = new DatagramPacket(bytes, bytes.length);
+	static DatagramPacket received = new DatagramPacket(bytes2, bytes2.length);
+
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Receiver");
 		f.setSize(700, 400);
 		f.setLocation(500, 10);
 		f.setLocation(100, 10);
-		GridLayout layout = new GridLayout(0,2);
+		GridLayout layout = new GridLayout(0, 2);
 		f.setLayout(layout);
 		f.getContentPane().setBackground(Color.LIGHT_GRAY);
-		
-		
-		
-		
+
 		final JLabel ip = new JLabel("IP Address of Reciver:");
 		ip.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel portACK = new JLabel("Port # for ACKs:");
@@ -56,19 +54,18 @@ public class Receiver {
 		mode.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel conn = new JLabel("Connection status: not connected");
 		conn.setHorizontalAlignment(SwingConstants.LEFT);
-		
+
 		final JButton modeButton = new JButton("Reliable/Unreliable");
 		modeButton.setBackground(Color.GREEN);
 		final JButton connectButton = new JButton("Connect/Disconnect");
 		connectButton.setHorizontalAlignment(SwingConstants.CENTER);
 		connectButton.setBackground(Color.YELLOW);
-		
+
 		final TextField ipField = new TextField();
 		final TextField portACKField = new TextField();
 		final TextField portDATAField = new TextField();
 		final TextField fileField = new TextField();
-		
-		
+
 		f.add(ip);
 		f.add(ipField);
 		f.add(portACK);
@@ -83,15 +80,14 @@ public class Receiver {
 		f.add(modeButton);
 		f.add(conn);
 		f.add(connectButton);
-		
+
 		f.setVisible(true);
-		
-		
+
 		connectButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if(connected == false) {
-					if(ipField.getText().isEmpty() == false) {
+				if (connected == false) {
+					if (ipField.getText().isEmpty() == false) {
 						try {
 							ipAddress = InetAddress.getByName(ipField.getText());
 						} catch (UnknownHostException e1) {
@@ -99,40 +95,40 @@ public class Receiver {
 							e1.printStackTrace();
 						}
 					}
-					if(portACKField.getText().isEmpty() == false) {
+					if (portACKField.getText().isEmpty() == false) {
 						portA = Integer.parseInt(portACKField.getText());
 					}
-					if(portDATAField.getText().isEmpty() == false) {
+					if (portDATAField.getText().isEmpty() == false) {
 						portD = Integer.parseInt(portDATAField.getText());
 					}
-					if(fileField.getText().isEmpty() == false) {
+					if (fileField.getText().isEmpty() == false) {
 						fName = fileField.getText();
 					}
-					
+
 					try {
-						socket = new DatagramSocket(portA,InetAddress.getByName("10.84.92.88"));
-						r.setPort(portD);
-						r.setAddress(ipAddress);
+
+						socket = new DatagramSocket(portD, ipAddress);
+						received.setPort(portD);
+						received.setAddress(ipAddress);
+
 						connected = true;
+
+						socket.receive(received);
+						System.out.println(new String(received.getData()));
+
+						r.setPort(portA);
+						r.setAddress(ipAddress);
+						r.setData(bytes);
+						socket.send(r);
+
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
 				}
 			}
 		});
-		while(connected == true) {
-			
-			socket.receive(r);
-			String str = Arrays.toString(r.getData());
-			System.out.println(str);
-			
-			
-			
-			ack.setData(bytes);
-			socket.send(ack);
-			
-		}
+
 	}
-	
+
 }
 //vape

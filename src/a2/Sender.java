@@ -95,6 +95,7 @@ public class Sender {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (connected == false) {
+					connectButton.setText("CONNECT/DISCONNECT");
 					connectButton.setBackground(Color.RED);
 					if (ipField.getText().isEmpty() == false) {
 						try {
@@ -125,7 +126,7 @@ public class Sender {
 					try {
 						// HANDSHAKING
 						connectionStatus.setText("Connection status: connecting...");
-						socket = new DatagramSocket(portNum2, ipAddress);
+						socket = new DatagramSocket(portNum2, InetAddress.getByName("10.84.92.76"));
 						send.setPort(portNum);
 						send.setAddress(ipAddress);
 						send.setLength(UDPsize);
@@ -144,8 +145,12 @@ public class Sender {
 								connected = true;
 								break;
 							} catch (SocketTimeoutException e1) {
-								System.out.println("Timeout reached! Resending packet...");
-								socket.send(send);
+								System.out.println("Timeout reached! Connection unsuccessful. Check IP/PORT#");
+								connectionStatus
+										.setText("Connection status: connection error, disconnect then reconnect.");
+								connectButton.setText("RECONNECT");
+								socket.close();
+								break;
 							}
 
 						}
