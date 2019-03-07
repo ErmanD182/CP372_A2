@@ -126,7 +126,7 @@ public class Sender {
 					try {
 						// HANDSHAKING
 						connectionStatus.setText("Connection status: connecting...");
-						socket = new DatagramSocket(portNum2, ipAddress);
+						socket = new DatagramSocket(portNum2, InetAddress.getByName("10.84.92.76"));
 						send.setPort(portNum);
 						send.setAddress(ipAddress);
 						send.setLength(UDPsize);
