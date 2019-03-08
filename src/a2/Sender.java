@@ -25,15 +25,13 @@ public class Sender {
 	static int portNum2;
 	static int UDPsize;
 	static String UDPsizeStr;
-	static int transmissionTime;
 	static int timeoutNumber;
 	static InetAddress ipAddress;
 	static String fileName = "";
 	static boolean connected = false;
 	static DatagramSocket socket;
 	static byte[] handShake2 = new byte[1024];
-	static byte[] handShake = new byte[1024];
-	static DatagramPacket send = new DatagramPacket(handShake, UDPsize);
+	static long time, start;
 
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Sender");
@@ -53,10 +51,12 @@ public class Sender {
 		file_name.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel UDPdatagram = new JLabel("Maximum size of UDP datagram: ");
 		UDPdatagram.setHorizontalAlignment(SwingConstants.LEFT);
-		final JLabel transmission = new JLabel("Total transmission time: ");
-		transmission.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel timeout = new JLabel("Timeout (milliseconds): ");
 		timeout.setHorizontalAlignment(SwingConstants.LEFT);
+		final JLabel transmission = new JLabel("Total transmission time (milliseconds): ");
+		transmission.setHorizontalAlignment(SwingConstants.LEFT);
+		final JLabel transmissionTime = new JLabel("0");
+		transmissionTime.setHorizontalAlignment(SwingConstants.CENTER);
 		final JLabel connectionStatus = new JLabel("Connection status: not connected ");
 		connectionStatus.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel space = new JLabel(" ");
@@ -66,7 +66,6 @@ public class Sender {
 		final TextField portField2 = new TextField();
 		final TextField fileField = new TextField();
 		final TextField datagramField = new TextField();
-		final TextField transmissionField = new TextField();
 		final TextField timeoutNumField = new TextField();
 		final JButton transferButton = new JButton("TRANSFER");
 		transferButton.setBackground(Color.YELLOW);
@@ -83,10 +82,10 @@ public class Sender {
 		f.add(fileField);
 		f.add(UDPdatagram);
 		f.add(datagramField);
-		f.add(transmission);
-		f.add(transmissionField);
 		f.add(timeout);
 		f.add(timeoutNumField);
+		f.add(transmission);
+		f.add(transmissionTime);
 		f.add(connectionStatus);
 		f.add(space);
 		f.add(connectButton);
@@ -120,22 +119,20 @@ public class Sender {
 						UDPsize = Integer.parseInt(datagramField.getText());
 						UDPsizeStr = datagramField.getText();
 					}
-					if (transmissionField.getText().isEmpty() == false) {
-						transmissionTime = Integer.parseInt(transmissionField.getText());
-					}
+
 					if (timeoutNumField.getText().isEmpty() == false) {
 						timeoutNumber = Integer.parseInt(timeoutNumField.getText());
 					}
 
 					try {
 						// HANDSHAKING
-						handShake = UDPsizeStr.getBytes();
+						byte[] handShake = new byte[1024];
 						connectionStatus.setText("Connection status: connecting...");
 						socket = new DatagramSocket(portNum2, InetAddress.getByName("192.168.1.16"));
+						DatagramPacket send = new DatagramPacket(handShake, handShake.length - UDPsize);
 						send.setPort(portNum);
 						send.setAddress(ipAddress);
-						send.setLength(UDPsize);
-						send.setData(handShake);
+						send.setData(UDPsizeStr.getBytes());
 						socket.send(send);
 						DatagramPacket receive = new DatagramPacket(handShake2, handShake2.length, ipAddress, portNum2);
 						socket.setSoTimeout(timeoutNumber);
@@ -143,7 +140,7 @@ public class Sender {
 						while (true) {
 							try {
 								socket.receive(receive);
-								String rcvd = "rcvd from " + receive.getAddress() + ", " + receive.getPort() + ": "
+								String rcvd = "RECEIVED FROM: " + receive.getAddress() + ", " + receive.getPort() + ": "
 										+ new String(receive.getData(), 0, receive.getLength());
 								System.out.println(rcvd);
 								connectionStatus.setText("Connection status: successfully connected");
@@ -177,11 +174,12 @@ public class Sender {
 			public void actionPerformed(ActionEvent e) {
 				if (connected == true) {
 					try {
+						start = System.currentTimeMillis();
 						BufferedReader reader = new BufferedReader(new FileReader(fileName));
 						String line = null;
 						byte[] data = new byte[1024];
-						DatagramPacket filePacket = new DatagramPacket(data, UDPsize);
-						DatagramPacket ackPacket = new DatagramPacket(data, UDPsize);
+						DatagramPacket filePacket = new DatagramPacket(data, data.length - UDPsize);
+						DatagramPacket ackPacket = new DatagramPacket(data, data.length - UDPsize);
 						filePacket.setAddress(ipAddress);
 						filePacket.setPort(portNum);
 						ackPacket.setAddress(ipAddress);
@@ -192,11 +190,12 @@ public class Sender {
 							socket.setSoTimeout(timeoutNumber);
 							while (line != null) {
 								try {
-									System.out.println(line);
 									filePacket.setData(line.getBytes());
 									socket.send(filePacket);
+									System.out.println("SENDING: " + line);
+
 									socket.receive(ackPacket);
-									System.out.println(new String(ackPacket.getData()));
+									System.out.println("RECEIVED: " + new String(ackPacket.getData()));
 									line = reader.readLine();
 									if (line != null) {
 										line = line.concat(" 0");
@@ -205,7 +204,16 @@ public class Sender {
 									System.out.println("ACK not received, resending packet...");
 								}
 							}
+							String end = "EOF!@#$%^&*()";
+							filePacket.setData(end.getBytes());
+							socket.send(filePacket);
 							reader.close();
+							connectionStatus.setText("Connection status: file sent, disconnected.");
+							connectButton.setBackground(Color.GREEN);
+							socket.close();
+							connected = false;
+							time = System.currentTimeMillis() - start;
+							transmissionTime.setText(Long.toString(time));
 						} catch (IOException e1) {
 							e1.printStackTrace();
 						}

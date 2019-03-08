@@ -110,6 +110,7 @@ public class Receiver {
 
 					try {
 						// HANDSHAKING
+						conn.setText("Connection status: connecting...");
 						socket = new DatagramSocket(portD, ipAddress);
 						received.setPort(portD);
 						received.setAddress(ipAddress);
@@ -124,19 +125,22 @@ public class Receiver {
 						r.setLength(Integer.parseInt(UDPsize));
 						r.setData(bytes);
 						socket.send(r);
-
+						conn.setText("Connection status: connected");
 						// GET THE FILE donkey
 						boolean endOfFile = false;
 						boolean zero = true;
 						boolean prevSeg = zero;
 						while (connected == true && endOfFile == false) {
 							try {
-								DatagramPacket received2 = new DatagramPacket(bytes2, Integer.parseInt(UDPsize));
+								DatagramPacket received2 = new DatagramPacket(bytes2,
+										bytes2.length - Integer.parseInt(UDPsize));
 								socket.receive(received2);
 								dataStr = new String(received2.getData(), received2.getOffset(), received2.getLength());
 								System.out.println(dataStr);
-								if (dataStr.equals("\n") == true) {
+								if (dataStr.equals("EOF!@#$%^&*()") == true) {
 									endOfFile = true;
+									prevSeg = zero;
+									zero = false;
 								}
 								if (dataStr.endsWith(" 0") == true) {
 									prevSeg = zero;
@@ -166,6 +170,9 @@ public class Receiver {
 								e1.printStackTrace();
 							}
 						}
+						conn.setText("Connection status: file received, disconnected.");
+						connected = false;
+						socket.close();
 
 					} catch (IOException e1) {
 						e1.printStackTrace();
