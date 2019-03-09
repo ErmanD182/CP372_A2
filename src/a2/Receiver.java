@@ -52,7 +52,7 @@ public class Receiver {
 		numRecv.setHorizontalAlignment(SwingConstants.RIGHT);
 		final JLabel mode = new JLabel("Transfer type: reliable");
 		mode.setHorizontalAlignment(SwingConstants.LEFT);
-		final JLabel conn = new JLabel("Connection status: not connected");
+		final JLabel conn = new JLabel("Connection status: Not Connected");
 		conn.setHorizontalAlignment(SwingConstants.LEFT);
 
 		final JButton modeButton = new JButton("Reliable/Unreliable");
@@ -107,15 +107,16 @@ public class Receiver {
 
 					try {
 
-						socket = new DatagramSocket(portD, ipAddress);
+						socket = new DatagramSocket(portD, InetAddress.getByName("10.84.92.88"));
 						received.setPort(portD);
 						received.setAddress(ipAddress);
-
+						
 						connected = true;
 
 						socket.receive(received);
 						System.out.println(new String(received.getData()));
-
+						conn.setText("Connection status: Connected");
+						connectButton.setBackground(Color.RED);
 						r.setPort(portA);
 						r.setAddress(ipAddress);
 						r.setData(bytes);
@@ -124,6 +125,11 @@ public class Receiver {
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
+				}else {
+					conn.setText("Connection status: Not Connected");
+					connectButton.setBackground(Color.GREEN);
+					socket.close();
+					connected = false;
 				}
 			}
 		});
