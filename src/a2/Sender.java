@@ -128,7 +128,7 @@ public class Sender {
 						// HANDSHAKING
 						byte[] handShake = new byte[1024];
 						connectionStatus.setText("Connection status: connecting...");
-						socket = new DatagramSocket(portNum2, InetAddress.getByName("192.168.1.16"));
+						socket = new DatagramSocket(portNum2, InetAddress.getByName("10.84.76.53"));
 						DatagramPacket send = new DatagramPacket(handShake, handShake.length - UDPsize);
 						send.setPort(portNum);
 						send.setAddress(ipAddress);
@@ -174,6 +174,7 @@ public class Sender {
 			public void actionPerformed(ActionEvent e) {
 				if (connected == true) {
 					try {
+						boolean segment = true;
 						start = System.currentTimeMillis();
 						BufferedReader reader = new BufferedReader(new FileReader(fileName));
 						String line = null;
@@ -186,6 +187,7 @@ public class Sender {
 						ackPacket.setPort(portNum2);
 						line = reader.readLine();
 						line = line.concat(" 0");
+						segment = false;
 						try {
 							socket.setSoTimeout(timeoutNumber);
 							while (line != null) {
@@ -197,8 +199,12 @@ public class Sender {
 									socket.receive(ackPacket);
 									System.out.println("RECEIVED: " + new String(ackPacket.getData()));
 									line = reader.readLine();
-									if (line != null) {
+									if (line != null && segment == true) {
 										line = line.concat(" 0");
+										segment = false;
+									} else if (line != null && segment == false) {
+										line = line.concat(" 1");
+										segment = true;
 									}
 								} catch (SocketTimeoutException e1) {
 									System.out.println("ACK not received, resending packet...");
