@@ -4,7 +4,9 @@ import java.awt.GridLayout;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -127,19 +129,20 @@ public class Receiver {
 						conn.setText("Connection status: connected");
 						// GET THE FILE donkey
 						boolean endOfFile = false;
-						boolean zero = true;
-						boolean prevSeg = zero;
+						boolean zero = false;
+						boolean prevSeg;
+						StringBuffer buff;
+						BufferedWriter out = new BufferedWriter(new FileWriter(fName));
 						while (connected == true && endOfFile == false) {
 							try {
 								DatagramPacket received2 = new DatagramPacket(bytes2,
 										bytes2.length - Integer.parseInt(UDPsize));
 								socket.receive(received2);
 								dataStr = new String(received2.getData(), received2.getOffset(), received2.getLength());
-								System.out.println(dataStr);
+								buff = new StringBuffer(dataStr);
 								if (dataStr.equals("EOF!@#$%^&*()") == true) {
 									endOfFile = true;
-									prevSeg = zero;
-									zero = false;
+
 								}
 								if (dataStr.endsWith(" 0") == true) {
 									prevSeg = zero;
@@ -151,11 +154,15 @@ public class Receiver {
 
 								r.setPort(portA);
 								r.setAddress(ipAddress);
-								if (prevSeg == zero) {
-									if (zero != true) {
+								if (prevSeg != zero) {
+									if (zero == true) {
 										ack = "Ack of segement number 0";
 									} else {
 										ack = "Ack of segement number 1";
+									}
+									if (endOfFile == false) {
+										buff.delete(dataStr.length() - 1, dataStr.length());
+										out.write(buff + "\n");
 									}
 									bytes = ack.getBytes();
 									r.setData(bytes);
@@ -171,6 +178,7 @@ public class Receiver {
 						}
 						conn.setText("Connection status: file received, disconnected.");
 						connected = false;
+						out.close();
 						socket.close();
 
 					} catch (IOException e1) {
