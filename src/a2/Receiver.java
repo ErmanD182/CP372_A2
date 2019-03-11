@@ -1,10 +1,10 @@
 package a2;
-
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -28,6 +28,8 @@ public class Receiver {
 	static DatagramSocket socket;
 	static DatagramPacket r = new DatagramPacket(bytes, bytes.length);
 	static DatagramPacket received = new DatagramPacket(bytes2, bytes2.length);
+	static String UDPsize;
+	static String dataStr;
 
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Receiver");
@@ -52,7 +54,7 @@ public class Receiver {
 		numRecv.setHorizontalAlignment(SwingConstants.RIGHT);
 		final JLabel mode = new JLabel("Transfer type: reliable");
 		mode.setHorizontalAlignment(SwingConstants.LEFT);
-		final JLabel conn = new JLabel("Connection status: Not Connected");
+		final JLabel conn = new JLabel("Connection status: not connected");
 		conn.setHorizontalAlignment(SwingConstants.LEFT);
 
 		final JButton modeButton = new JButton("Reliable/Unreliable");
@@ -106,30 +108,74 @@ public class Receiver {
 					}
 
 					try {
-
-						socket = new DatagramSocket(portD, InetAddress.getByName("10.84.92.88"));
+						// HANDSHAKING
+						conn.setText("Connection status: connecting...");
+						socket = new DatagramSocket(portD, ipAddress);
 						received.setPort(portD);
 						received.setAddress(ipAddress);
-						
 						connected = true;
 
 						socket.receive(received);
-						System.out.println(new String(received.getData()));
-						conn.setText("Connection status: Connected");
-						connectButton.setBackground(Color.RED);
+
+						UDPsize = new String(received.getData(), received.getOffset(), received.getLength());
+
 						r.setPort(portA);
 						r.setAddress(ipAddress);
+						r.setLength(Integer.parseInt(UDPsize));
 						r.setData(bytes);
 						socket.send(r);
+						conn.setText("Connection status: connected");
+						// GET THE FILE donkey
+						boolean endOfFile = false;
+						boolean zero = true;
+						boolean prevSeg = zero;
+						while (connected == true && endOfFile == false) {
+							try {
+								DatagramPacket received2 = new DatagramPacket(bytes2,
+										bytes2.length - Integer.parseInt(UDPsize));
+								socket.receive(received2);
+								dataStr = new String(received2.getData(), received2.getOffset(), received2.getLength());
+								System.out.println(dataStr);
+								if (dataStr.equals("EOF!@#$%^&*()") == true) {
+									endOfFile = true;
+									prevSeg = zero;
+									zero = false;
+								}
+								if (dataStr.endsWith(" 0") == true) {
+									prevSeg = zero;
+									zero = true;
+								} else {
+									prevSeg = zero;
+									zero = false;
+								}
+
+								r.setPort(portA);
+								r.setAddress(ipAddress);
+								if (prevSeg == zero) {
+									if (zero != true) {
+										ack = "Ack of segement number 0";
+									} else {
+										ack = "Ack of segement number 1";
+									}
+									bytes = ack.getBytes();
+									r.setData(bytes);
+									socket.send(r);
+								}
+
+							} catch (FileNotFoundException e1) {
+								e1.printStackTrace();
+								System.out.println("ERROR: File not found");
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+						conn.setText("Connection status: file received, disconnected.");
+						connected = false;
+						socket.close();
 
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
-				}else {
-					conn.setText("Connection status: Not Connected");
-					connectButton.setBackground(Color.GREEN);
-					socket.close();
-					connected = false;
 				}
 			}
 		});
@@ -137,4 +183,4 @@ public class Receiver {
 	}
 
 }
-//vape
+//vape//vape
