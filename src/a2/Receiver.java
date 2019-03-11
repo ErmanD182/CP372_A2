@@ -32,6 +32,7 @@ public class Receiver {
 	static DatagramPacket received = new DatagramPacket(bytes2, bytes2.length);
 	static String UDPsize;
 	static String dataStr;
+	static boolean relilable = true;
 
 	public static void main(String[] args) throws Exception {
 		JFrame f = new JFrame("Receiver");
@@ -54,7 +55,7 @@ public class Receiver {
 		inOrder.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel numRecv = new JLabel("0  ");
 		numRecv.setHorizontalAlignment(SwingConstants.RIGHT);
-		final JLabel mode = new JLabel("Transfer type: reliable");
+		final JLabel mode = new JLabel("Transfer type: Reliable");
 		mode.setHorizontalAlignment(SwingConstants.LEFT);
 		final JLabel conn = new JLabel("Connection status: not connected");
 		conn.setHorizontalAlignment(SwingConstants.LEFT);
@@ -133,47 +134,104 @@ public class Receiver {
 						boolean prevSeg;
 						StringBuffer buff;
 						BufferedWriter out = new BufferedWriter(new FileWriter(fName));
-						while (connected == true && endOfFile == false) {
-							try {
-								DatagramPacket received2 = new DatagramPacket(bytes2,
-										bytes2.length - Integer.parseInt(UDPsize));
-								socket.receive(received2);
-								dataStr = new String(received2.getData(), received2.getOffset(), received2.getLength());
-								buff = new StringBuffer(dataStr);
-								if (dataStr.equals("EOF!@#$%^&*()") == true) {
-									endOfFile = true;
-
-								}
-								if (dataStr.endsWith(" 0") == true) {
-									prevSeg = zero;
-									zero = true;
-								} else {
-									prevSeg = zero;
-									zero = false;
-								}
-
-								r.setPort(portA);
-								r.setAddress(ipAddress);
-								if (prevSeg != zero) {
-									if (zero == true) {
-										ack = "Ack of segement number 0";
+						int numPackets = 0;
+						if(relilable == true) {
+							while (connected == true && endOfFile == false) {
+								try {
+									DatagramPacket received2 = new DatagramPacket(bytes2,
+											bytes2.length - Integer.parseInt(UDPsize));
+									socket.receive(received2);
+									dataStr = new String(received2.getData(), received2.getOffset(), received2.getLength());
+									buff = new StringBuffer(dataStr);
+									if (dataStr.equals("EOF!@#$%^&*()") == true) {
+										endOfFile = true;
+	
+									}
+									if (dataStr.endsWith(" 0") == true) {
+										prevSeg = zero;
+										zero = true;
 									} else {
-										ack = "Ack of segement number 1";
+										prevSeg = zero;
+										zero = false;
 									}
-									if (endOfFile == false) {
-										buff.delete(dataStr.length() - 1, dataStr.length());
-										out.write(buff + "\n");
+	
+									r.setPort(portA);
+									r.setAddress(ipAddress);
+									if (prevSeg != zero) {
+										if (zero == true) {
+											ack = "Ack of segement number 0";
+										} else {
+											ack = "Ack of segement number 1";
+										}
+										if (endOfFile == false) {
+											buff.delete(dataStr.length() - 1, dataStr.length());
+											numPackets++;
+											numRecv.setText(String.valueOf(numPackets));
+											out.write(buff + "\n");
+										}
+										bytes = ack.getBytes();
+										r.setData(bytes);
+										socket.send(r);
 									}
-									bytes = ack.getBytes();
-									r.setData(bytes);
-									socket.send(r);
+	
+								} catch (FileNotFoundException e1) {
+									e1.printStackTrace();
+									System.out.println("ERROR: File not found");
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-
-							} catch (FileNotFoundException e1) {
-								e1.printStackTrace();
-								System.out.println("ERROR: File not found");
-							} catch (IOException e1) {
-								e1.printStackTrace();
+							}
+						}else {
+							int count = 0;
+							while (connected == true && endOfFile == false) {
+								try {
+									DatagramPacket received2 = new DatagramPacket(bytes2,
+											bytes2.length - Integer.parseInt(UDPsize));
+									socket.receive(received2);
+									dataStr = new String(received2.getData(), received2.getOffset(), received2.getLength());
+									buff = new StringBuffer(dataStr);
+									
+									if(count != 10) {
+										if (dataStr.equals("EOF!@#$%^&*()") == true) {
+											endOfFile = true;
+		
+										}
+										if (dataStr.endsWith(" 0") == true) {
+											prevSeg = zero;
+											zero = true;
+										} else {
+											prevSeg = zero;
+											zero = false;
+										}
+		
+										r.setPort(portA);
+										r.setAddress(ipAddress);
+										if (prevSeg != zero) {
+											if (zero == true) {
+												ack = "Ack of segement number 0";
+											} else {
+												ack = "Ack of segement number 1";
+											}
+											if (endOfFile == false) {
+												buff.delete(dataStr.length() - 1, dataStr.length());
+												numPackets++;
+												numRecv.setText(String.valueOf(numPackets));
+												count++;
+												out.write(buff + "\n");
+											}
+											bytes = ack.getBytes();
+											r.setData(bytes);
+											socket.send(r);
+										}
+									}else {
+										count = 0;
+									}
+								} catch (FileNotFoundException e1) {
+									e1.printStackTrace();
+									System.out.println("ERROR: File not found");
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
 							}
 						}
 						conn.setText("Connection status: file received, disconnected.");
@@ -187,7 +245,22 @@ public class Receiver {
 				}
 			}
 		});
+		
+		modeButton.addActionListener(new ActionListener() {
 
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(relilable == true) {
+					relilable = false;
+					mode.setText("Transfer type: Unreliable");
+				}else {
+					relilable = true;
+					mode.setText("Transfer type: Reliable");
+				}
+				
+			}
+			
+		});
 	}
 
 }
